@@ -5,12 +5,19 @@ import shaders from './shaders'
 
 export const defaultConfig = {
   textureDownsample: 1,
-  densityDissipation: 0.98,
-  velocityDissipation: 0.99,
+  densityDissipation: 0.95,
+  velocityDissipation: 0.98,
   pressureDissipation: 0.8,
   pressureIterations: 25,
   curl: 30,
-  splatRadius: 0.005
+  splatRadius: 0.005,
+  colors: [
+    [5, 0, 15],   // Purple (reduced)
+    [0, 13, 5],   // Green (reduced)
+    [10, 5, 0],   // Orange (reduced)
+    [0, 5, 15],   // Blue (reduced)
+    [15, 0, 5]    // Red (reduced)
+  ]
 }
 
 class Pointer {
@@ -23,6 +30,8 @@ class Pointer {
     this.down = false
     this.moved = false
     this.color = [30, 0, 300]
+    this.prevX = 0
+    this.prevY = 0
   }
 }
 
@@ -33,11 +42,15 @@ export default class FluidAnimation {
       config = {
         ...defaultConfig,
         ...opts.config
-      }
+      },
+      disableRandomSplats = false,
+      movementThreshold = 0
     } = opts
 
     this._canvas = canvas
     this._config = config
+    this._disableRandomSplats = disableRandomSplats
+    this._movementThreshold = movementThreshold
 
     this._pointers = [ new Pointer() ]
     this._splatStack = []
@@ -52,6 +65,7 @@ export default class FluidAnimation {
 
     this._time = Date.now()
     this._timer = 0
+    this._colorCycle = 0
   }
 
   get config() {
@@ -60,6 +74,22 @@ export default class FluidAnimation {
 
   set config(config) {
     this._config = config
+  }
+
+  get disableRandomSplats() {
+    return this._disableRandomSplats
+  }
+
+  set disableRandomSplats(value) {
+    this._disableRandomSplats = value
+  }
+
+  get movementThreshold() {
+    return this._movementThreshold
+  }
+
+  set movementThreshold(value) {
+    this._movementThreshold = value
   }
 
   get width() {
@@ -103,20 +133,68 @@ export default class FluidAnimation {
   }
 
   onMouseMove = (e) => {
-    this._pointers[0].moved = this._pointers[0].down
-    this._pointers[0].dx = (e.offsetX - this._pointers[0].x) * 10.0
-    this._pointers[0].dy = (e.offsetY - this._pointers[0].y) * 10.0
-    this._pointers[0].x = e.offsetX
-    this._pointers[0].y = e.offsetY
+    const pointer = this._pointers[0];
+    pointer.prevX = pointer.x;
+    pointer.prevY = pointer.y;
+    
+    pointer.x = e.offsetX
+    pointer.y = e.offsetY
+    pointer.dx = (pointer.x - pointer.prevX) * 10.0
+    pointer.dy = (pointer.y - pointer.prevY) * 10.0
+    
+    // Calculate movement magnitude
+    const movementMagnitude = Math.sqrt(pointer.dx * pointer.dx + pointer.dy * pointer.dy);
+    
+    // Only set moved to true if movement is above threshold
+    pointer.moved = movementMagnitude > this._movementThreshold;
+    
+    // Dynamically update color on mouse move
+    this._updatePointerColor(pointer);
+  }
+
+  _updatePointerColor(pointer) {
+    // Use custom colors if provided, otherwise generate dynamically
+    if (this._config.colors && this._config.colors.length > 0) {
+      // Cycle through the colors array
+      const now = Date.now() * 0.001;
+      const colorIndex = Math.floor((now * 0.1) % this._config.colors.length);
+      pointer.color = this._config.colors[colorIndex].slice(); // Make a copy of the color
+      
+      // Add slight variations to colors for more interesting effects
+      const variation = Math.sin(now * 0.3) * 2;
+      pointer.color = pointer.color.map(c => Math.max(0, c + variation));
+    } else {
+      // Original color generation logic based on HSB
+      const now = Date.now() * 0.001;
+      const hue = (now * 0.15) % 1;
+      const saturation = 0.6;
+      const brightness = 0.6;
+      
+      // Convert HSB to RGB
+      let r, g, b;
+      
+      const i = Math.floor(hue * 6);
+      const f = hue * 6 - i;
+      const p = brightness * (1 - saturation);
+      const q = brightness * (1 - f * saturation);
+      const t = brightness * (1 - (1 - f) * saturation);
+      
+      switch (i % 6) {
+        case 0: r = brightness; g = t; b = p; break;
+        case 1: r = q; g = brightness; b = p; break;
+        case 2: r = p; g = brightness; b = t; break;
+        case 3: r = p; g = q; b = brightness; break;
+        case 4: r = t; g = p; b = brightness; break;
+        case 5: r = brightness; g = p; b = q; break;
+      }
+      
+      pointer.color = [r * 10, g * 10, b * 10];
+    }
   }
 
   onMouseDown = (e) => {
     this._pointers[0].down = true
-    this._pointers[0].color = [
-      Math.random() + 0.2,
-      Math.random() + 0.2,
-      Math.random() + 0.2
-    ]
+    this._updatePointerColor(this._pointers[0]);
   }
 
   onMouseUp = (e) => {
@@ -124,30 +202,80 @@ export default class FluidAnimation {
   }
 
   onTouchStart = (e) => {
+    e.preventDefault(); // Prevent default to avoid scrolling
+    
     for (let i = 0; i < e.touches.length; ++i) {
-      this._pointers[i].down = true
-      this._pointers[i].color = [
-        Math.random() + 0.2,
-        Math.random() + 0.2,
-        Math.random() + 0.2
-      ]
+      const touch = e.touches[i]
+      if (i >= this._pointers.length) {
+        this._pointers.push(new Pointer())
+      }
+      
+      const pointer = this._pointers[i]
+      pointer.id = touch.identifier
+      pointer.down = true
+      
+      // Convert touch coordinates to canvas coordinates
+      const rect = this._canvas.getBoundingClientRect()
+      pointer.x = touch.clientX - rect.left
+      pointer.y = touch.clientY - rect.top
+      pointer.prevX = pointer.x
+      pointer.prevY = pointer.y
+      
+      this._updatePointerColor(pointer)
     }
   }
 
   onTouchMove = (e) => {
+    e.preventDefault(); // Prevent default to avoid scrolling
+    
     for (let i = 0; i < e.touches.length; ++i) {
       const touch = e.touches[i]
-      this._pointers[i].moved = this._pointers[i].down
-      this._pointers[i].dx = (touch.clientX - this._pointers[i].x) * 10.0
-      this._pointers[i].dy = (touch.clientY - this._pointers[i].y) * 10.0
-      this._pointers[i].x = touch.clientX
-      this._pointers[i].y = touch.clientY
+      // Find the pointer with matching ID
+      let pointer = null
+      for (let j = 0; j < this._pointers.length; j++) {
+        if (this._pointers[j].id === touch.identifier) {
+          pointer = this._pointers[j]
+          break
+        }
+      }
+      
+      if (!pointer) {
+        continue // Skip if no matching pointer found
+      }
+      
+      pointer.prevX = pointer.x
+      pointer.prevY = pointer.y
+      
+      // Convert touch coordinates to canvas coordinates
+      const rect = this._canvas.getBoundingClientRect()
+      pointer.x = touch.clientX - rect.left
+      pointer.y = touch.clientY - rect.top
+      pointer.dx = (pointer.x - pointer.prevX) * 10.0
+      pointer.dy = (pointer.y - pointer.prevY) * 10.0
+      
+      // Calculate movement magnitude
+      const movementMagnitude = Math.sqrt(pointer.dx * pointer.dx + pointer.dy * pointer.dy);
+      
+      // Only set moved to true if movement is above threshold
+      pointer.moved = movementMagnitude > this._movementThreshold;
+      
+      this._updatePointerColor(pointer)
     }
   }
 
   onTouchEnd = (e) => {
-    for (let i = 0; i < e.touches.length; ++i) {
-      this._pointers[i].down = false
+    e.preventDefault(); // Prevent default to avoid scrolling
+
+    // Create an array of active touch identifiers
+    const activeTouchIds = Array.from(e.touches).map(touch => touch.identifier)
+    
+    // Update each pointer that is no longer active
+    for (let i = 0; i < this._pointers.length; i++) {
+      const pointer = this._pointers[i]
+      if (pointer.id !== -1 && !activeTouchIds.includes(pointer.id)) {
+        pointer.down = false
+        pointer.moved = false // Reset moved flag when touch ends
+      }
     }
   }
 
@@ -307,7 +435,7 @@ export default class FluidAnimation {
     this._velocity.swap()
 
     gl.uniform1i(this._programs.splat.uniforms.uTarget, this._density.read[2])
-    gl.uniform3f(this._programs.splat.uniforms.color, color[0] * 0.3, color[1] * 0.3, color[2] * 0.3)
+    gl.uniform3f(this._programs.splat.uniforms.color, color[0] * 0.15, color[1] * 0.15, color[2] * 0.15)
     this._blit(this._density.write[1])
     this._density.swap()
   }
@@ -331,7 +459,11 @@ export default class FluidAnimation {
   }
 
   _getRandomSplat() {
-    const color = [ Math.random() * 10, Math.random() * 10, Math.random() * 10 ]
+    // Create a temporary pointer to generate color
+    const tempPointer = new Pointer();
+    this._updatePointerColor(tempPointer);
+    
+    const color = tempPointer.color;
     const x = this._canvas.width * Math.random()
     const y = this._canvas.height * Math.random()
     const dx = 1000 * (Math.random() - 0.5)
@@ -346,6 +478,12 @@ export default class FluidAnimation {
     const dt = Math.min((Date.now() - this._time) / 1000, 0.016)
     this._time = Date.now()
     this._timer += 0.0001
+    this._colorCycle = (this._colorCycle + dt * 0.5) % 1.0
+    
+    // Occasionally add random splats for ambient motion
+    if (!this._disableRandomSplats && Math.random() < 0.01) {
+      this.addRandomSplats(1);
+    }
 
     const w = this._textureWidth
     const h = this._textureHeight
@@ -382,8 +520,15 @@ export default class FluidAnimation {
     for (let i = 0; i < this._pointers.length; i++) {
       const pointer = this._pointers[i]
       if (pointer.moved) {
+        // Update color continuously based on time, even without user interaction
+        this._updatePointerColor(pointer);
         this._splat(pointer.x, pointer.y, pointer.dx, pointer.dy, pointer.color)
-        pointer.moved = false
+        
+        // Reset moved flag for all pointers if they are not down
+        // This ensures we don't keep generating splats after touch/mouse released
+        if (!pointer.down) {
+          pointer.moved = false
+        }
       }
     }
 
@@ -437,6 +582,7 @@ export default class FluidAnimation {
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
     this._programs.display.bind()
     gl.uniform1i(this._programs.display.uniforms.uTexture, this._density.read[2])
+    gl.uniform4f(this._programs.display.uniforms.uBackgroundColor, 0.0, 0.0, 0.0, 0.0)
     this._blit(null)
   }
 }

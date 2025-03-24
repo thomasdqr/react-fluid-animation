@@ -1,16 +1,24 @@
 {
   "name": "react-fluid-animation",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Fluid media animation for React powered by WebGL.",
   "author": "transitive-bullshit",
   "license": "MIT",
   "repository": "transitive-bullshit/react-fluid-animation",
-  "main": "dist/index.js",
-  "module": "dist/index.es.js",
-  "jsnext:main": "dist/index.es.js",
+  "type": "module",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "types": "dist/index.d.ts",
   "engines": {
-    "node": ">=8",
-    "npm": ">=5"
+    "node": ">=12",
+    "npm": ">=6"
   },
   "keywords": [
     "react",
@@ -21,16 +29,19 @@
     "flow"
   ],
   "scripts": {
-    "prebuild": "yarn run clean",
-    "build": "babel src -s -d dist",
-    "prestart": "yarn run clean",
-    "start": "babel src -w -s -d dist",
-    "dev": "yarn start",
+    "prebuild": "npm run clean",
+    "build": "npm run build:esm && npm run build:cjs && npm run build:types",
+    "build:esm": "cross-env BABEL_ENV=esm babel src -s -d dist/esm",
+    "build:cjs": "cross-env BABEL_ENV=cjs babel src -s -d dist/cjs",
+    "build:types": "tsc --emitDeclarationOnly",
+    "prestart": "npm run clean",
+    "start": "npm run build -- --watch",
+    "dev": "npm start",
     "clean": "del dist",
     "test": "cross-env CI=1 react-scripts test --env=jsdom",
     "test:watch": "react-scripts test --env=jsdom",
-    "prepare": "yarn build",
-    "predeploy": "cd example && yarn install && yarn build",
+    "prepare": "npm run build",
+    "predeploy": "cd example && npm install && npm run build",
     "deploy": "gh-pages -d example/build"
   },
   "dependencies": {
@@ -39,8 +50,8 @@
   },
   "peerDependencies": {
     "prop-types": "^15.5.4",
-    "react": "^15.0.0 || ^16.0.0",
-    "react-dom": "^15.0.0 || ^16.0.0"
+    "react": "^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0",
+    "react-dom": "^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.1.2",
@@ -48,6 +59,7 @@
     "@babel/plugin-proposal-class-properties": "^7.1.0",
     "@babel/preset-env": "^7.1.0",
     "@babel/preset-react": "^7.0.0",
+    "@types/react": "^18.2.0",
     "cross-env": "^5.1.4",
     "del-cli": "^1.1.0",
     "eslint": "^5.0.1",
@@ -61,7 +73,8 @@
     "gh-pages": "^1.2.0",
     "react": "^16.6.3",
     "react-dom": "^16.6.3",
-    "react-scripts": "^1.1.4"
+    "react-scripts": "^1.1.4",
+    "typescript": "^5.0.4"
   },
   "files": [
     "dist"

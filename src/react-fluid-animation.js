@@ -12,6 +12,8 @@ class ReactFluidAnimation extends Component {
     config: PropTypes.object,
     style: PropTypes.object,
     animationRef: PropTypes.func,
+    disableRandomSplats: PropTypes.bool,
+    movementThreshold: PropTypes.number,
     size: PropTypes.shape({
       width: PropTypes.number,
       height: PropTypes.number
@@ -20,7 +22,9 @@ class ReactFluidAnimation extends Component {
 
   static defaultProps = {
     config: defaultConfig,
-    style: { }
+    style: { },
+    disableRandomSplats: false,
+    movementThreshold: 0
   }
 
   componentWillReceiveProps(props) {
@@ -30,6 +34,14 @@ class ReactFluidAnimation extends Component {
       this._animation.config = {
         ...props.config,
         defaultConfig
+      }
+    }
+    
+    if (this._animation) {
+      this._animation.disableRandomSplats = props.disableRandomSplats;
+      
+      if (typeof props.movementThreshold === 'number') {
+        this._animation.movementThreshold = props.movementThreshold;
       }
     }
   }
@@ -55,6 +67,8 @@ class ReactFluidAnimation extends Component {
       animationRef,
       style,
       size,
+      disableRandomSplats,
+      movementThreshold,
       ...rest
     } = this.props
 
@@ -79,7 +93,8 @@ class ReactFluidAnimation extends Component {
           onTouchEnd={this._onTouchEnd}
           style={{
             width: '100%',
-            height: '100%'
+            height: '100%',
+            background: 'transparent'
           }}
         />
       </div>
@@ -142,7 +157,9 @@ class ReactFluidAnimation extends Component {
     const {
       animationRef,
       content,
-      config
+      config,
+      disableRandomSplats,
+      movementThreshold
     } = props
 
     this._onResize()
@@ -150,7 +167,9 @@ class ReactFluidAnimation extends Component {
     this._animation = new FluidAnimation({
       canvas: this._canvas,
       content,
-      config
+      config,
+      disableRandomSplats,
+      movementThreshold
     })
 
     if (animationRef) {

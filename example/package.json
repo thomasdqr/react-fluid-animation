@@ -9,7 +9,7 @@
     "react": "^16.6.3",
     "react-dat-gui": "^1.0.2",
     "react-dom": "^16.6.3",
-    "react-fluid-animation": "link:..",
+    "react-fluid-animation": "file:..",
     "react-github-corner": "^2.3.0",
     "react-scripts": "^1.1.4"
   },

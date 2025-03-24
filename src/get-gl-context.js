@@ -1,9 +1,10 @@
 export default function getWebGLContext (canvas) {
   const params = {
-    alpha: false,
+    alpha: true,
     depth: false,
     stencil: false,
-    antialias: false
+    antialias: false,
+    premultipliedAlpha: true
   }
 
   let gl = canvas.getContext('webgl2', params)
@@ -24,7 +25,7 @@ export default function getWebGLContext (canvas) {
     supportLinearFiltering = gl.getExtension('OES_texture_half_float_linear')
   }
 
-  gl.clearColor(0.0, 0.0, 0.0, 1.0)
+  gl.clearColor(0.0, 0.0, 0.0, 0.0)
 
   const halfFloatTexType = isWebGL2 ? gl.HALF_FLOAT : halfFloat.HALF_FLOAT_OES
   let formatRGBA

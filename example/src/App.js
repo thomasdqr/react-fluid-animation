@@ -15,19 +15,61 @@ const defaultConfig = {
   pressureDissipation: 0.8,
   pressureIterations: 25,
   curl: 30,
-  splatRadius: 0.005
+  splatRadius: 0.005,
+  colors: [
+    [10, 0, 30],   // Purple
+    [0, 26, 10],   // Green
+    [20, 10, 0],   // Orange
+    [0, 10, 30],   // Blue
+    [30, 0, 10]    // Red
+  ]
+}
+
+// Color presets for the demo
+const colorPresets = {
+  default: [
+    [10, 0, 30],   // Purple
+    [0, 26, 10],   // Green
+    [20, 10, 0],   // Orange
+    [0, 10, 30],   // Blue
+    [30, 0, 10]    // Red
+  ],
+  warm: [
+    [30, 0, 0],    // Red
+    [30, 15, 0],   // Orange
+    [30, 30, 0],   // Yellow
+    [20, 10, 0],   // Light orange
+    [15, 5, 0]     // Light red
+  ],
+  cool: [
+    [0, 0, 30],    // Blue
+    [0, 15, 30],   // Light blue
+    [0, 30, 30],   // Cyan
+    [0, 10, 20],   // Darker blue
+    [10, 0, 30]    // Purple
+  ],
+  rainbow: [
+    [30, 0, 0],    // Red
+    [30, 30, 0],   // Yellow
+    [0, 30, 0],    // Green
+    [0, 30, 30],   // Cyan
+    [0, 0, 30],    // Blue
+    [30, 0, 30]    // Magenta
+  ]
 }
 
 export default class App extends Component {
   state = {
     config: {
       ...defaultConfig
-    }
+    },
+    colorScheme: 'default'
   }
 
   render () {
     const {
-      config
+      config,
+      colorScheme
     } = this.state
 
     return (
@@ -75,7 +117,7 @@ export default class App extends Component {
           direction='left'
         />
 
-        <DatGui data={config} onUpdate={this._onUpdate}>
+        <DatGui data={{...config, colorScheme}} onUpdate={this._onUpdate}>
           <DatSelect
             path='textureDownsample'
             label='Texture Downsample'
@@ -126,6 +168,12 @@ export default class App extends Component {
             max={0.02}
           />
 
+          <DatSelect
+            path='colorScheme'
+            label='Color Scheme'
+            options={Object.keys(colorPresets)}
+          />
+
           <DatButton
             label='Random Splats'
             onClick={this._onClickRandomSplats}
@@ -144,8 +192,16 @@ export default class App extends Component {
     this._animation = ref
   }
 
-  _onUpdate = (config) => {
-    this.setState({ config })
+  _onUpdate = (data) => {
+    const { colorScheme, ...config } = data;
+    
+    // If color scheme changed, update the colors
+    if (colorScheme !== this.state.colorScheme) {
+      config.colors = colorPresets[colorScheme];
+      this.setState({ colorScheme });
+    }
+    
+    this.setState({ config });
   }
 
   _onClickRandomSplats = () => {
@@ -153,6 +209,9 @@ export default class App extends Component {
   }
 
   _onReset = () => {
-    this.setState({ config: { ...defaultConfig } })
+    this.setState({ 
+      config: { ...defaultConfig },
+      colorScheme: 'default'
+    })
   }
 }
