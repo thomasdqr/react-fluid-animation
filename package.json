@@ -45,8 +45,8 @@
     "deploy": "gh-pages -d example/build"
   },
   "dependencies": {
-    "raf": "^3.4.1",
-    "react-sizeme": "^2.5.2"
+    "@juggle/resize-observer": "^3.4.0",
+    "raf": "^3.4.1"
   },
   "peerDependencies": {
     "prop-types": "^15.5.4",

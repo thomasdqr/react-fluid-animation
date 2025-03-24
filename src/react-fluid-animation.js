@@ -1,10 +1,31 @@
-import React, { Component } from 'react'
+import React, { Component, useEffect, useRef, useState, forwardRef } from 'react'
 import PropTypes from 'prop-types'
 
 import raf from 'raf'
-import sizeMe from 'react-sizeme'
+import { ResizeObserver } from '@juggle/resize-observer'
 
 import FluidAnimation, { defaultConfig } from './fluid-animation'
+
+const useResizeObserver = (ref) => {
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+
+  useEffect(() => {
+    if (!ref || !ref.current) return
+
+    const resizeObserver = new ResizeObserver(entries => {
+      const { width, height } = entries[0].contentRect
+      setDimensions({ width, height })
+    })
+
+    resizeObserver.observe(ref.current)
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [ref])
+
+  return dimensions
+}
 
 class ReactFluidAnimation extends Component {
   static propTypes = {
@@ -36,24 +57,20 @@ class ReactFluidAnimation extends Component {
         defaultConfig
       }
     }
-    
     if (this._animation) {
-      this._animation.disableRandomSplats = props.disableRandomSplats;
-      
+      this._animation.disableRandomSplats = props.disableRandomSplats
       if (typeof props.movementThreshold === 'number') {
-        this._animation.movementThreshold = props.movementThreshold;
+        this._animation.movementThreshold = props.movementThreshold
       }
     }
   }
 
   componentDidMount() {
-    window.addEventListener('resize', this._onResize)
     this._reset(this.props)
     this._tick()
   }
 
   componentWillUnmount() {
-    window.removeEventListener('resize', this._onResize)
     if (this._tickRaf) {
       raf.cancel(this._tickRaf)
       this._tickRaf = null
@@ -137,6 +154,7 @@ class ReactFluidAnimation extends Component {
   }
 
   _onResize = () => {
+    if (!this._container || !this._canvas) return
     this._canvas.width = this._container.clientWidth
     this._canvas.height = this._container.clientHeight
 
@@ -172,11 +190,32 @@ class ReactFluidAnimation extends Component {
       movementThreshold
     })
 
-    if (animationRef) {
+    if (typeof animationRef === 'function') {
       animationRef(this._animation)
-      // this._animation.addRandomSplats(parseInt(Math.random() * 20) + 5)
     }
   }
 }
 
-export default sizeMe({ monitorWidth: true, monitorHeight: true })(ReactFluidAnimation)
+const withResizeObserver = (WrappedComponent) => {
+  return forwardRef(function WithResizeObserver(props, ref) {
+    const containerRef = useRef(null)
+    const dimensions = useResizeObserver(containerRef)
+
+    return (
+      <WrappedComponent
+        {...props}
+        size={dimensions}
+        ref={(instance) => {
+          containerRef.current = instance && instance._container
+          if (typeof ref === 'function') {
+            ref(instance)
+          } else if (ref) {
+            ref.current = instance
+          }
+        }}
+      />
+    )
+  })
+}
+
+export default withResizeObserver(ReactFluidAnimation)
