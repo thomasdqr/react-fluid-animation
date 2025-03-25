@@ -11,6 +11,8 @@ export const defaultConfig = {
   pressureIterations: 25,
   curl: 30,
   splatRadius: 0.005,
+  additiveMode: false,
+  additiveThreshold: 1.0, // Higher values require more fluid to turn white (range: 0.5-3.0 recommended)
   colors: [
     [5, 0, 15],   // Purple (reduced)
     [0, 13, 5],   // Green (reduced)
@@ -73,7 +75,33 @@ export default class FluidAnimation {
   }
 
   set config(config) {
-    this._config = config
+    const prevConfig = this._config;
+    this._config = {
+      ...this._config,
+      ...config
+    };
+    
+    // Check if shader-relevant properties have changed
+    const shaderPropsChanged = 
+      prevConfig.additiveMode !== this._config.additiveMode || 
+      prevConfig.additiveThreshold !== this._config.additiveThreshold;
+    
+    // If shader properties changed, update them immediately
+    if (shaderPropsChanged && this._gl && this._programs) {
+      // Update display shader
+      if (this._programs.display) {
+        this._programs.display.bind();
+        this._gl.uniform1f(this._programs.display.uniforms.uAdditiveMode, this._config.additiveMode ? 1.0 : 0.0);
+        this._gl.uniform1f(this._programs.display.uniforms.uAdditiveThreshold, this._config.additiveThreshold || 1.0);
+      }
+      
+      // Update splat shader
+      if (this._programs.splat) {
+        this._programs.splat.bind();
+        this._gl.uniform1f(this._programs.splat.uniforms.uAdditiveMode, this._config.additiveMode ? 1.0 : 0.0);
+        this._gl.uniform1f(this._programs.splat.uniforms.uAdditiveThreshold, this._config.additiveThreshold || 1.0);
+      }
+    }
   }
 
   get disableRandomSplats() {
@@ -431,11 +459,18 @@ export default class FluidAnimation {
     gl.uniform2f(this._programs.splat.uniforms.point, x / this._canvas.width, 1.0 - y / this._canvas.height)
     gl.uniform3f(this._programs.splat.uniforms.color, dx, -dy, 1.0)
     gl.uniform1f(this._programs.splat.uniforms.radius, this._config.splatRadius)
+    gl.uniform1f(this._programs.splat.uniforms.uAdditiveMode, this._config.additiveMode ? 1.0 : 0.0)
+    gl.uniform1f(this._programs.splat.uniforms.uAdditiveThreshold, this._config.additiveThreshold || 1.0)
     this._blit(this._velocity.write[1])
     this._velocity.swap()
 
+    this._programs.splat.bind()
     gl.uniform1i(this._programs.splat.uniforms.uTarget, this._density.read[2])
-    gl.uniform3f(this._programs.splat.uniforms.color, color[0] * 0.15, color[1] * 0.15, color[2] * 0.15)
+    // Adjust color intensity - more subtle for additive mode to prevent oversaturation
+    const colorIntensity = this._config.additiveMode ? 0.12 : 0.15;
+    gl.uniform3f(this._programs.splat.uniforms.color, color[0] * colorIntensity, color[1] * colorIntensity, color[2] * colorIntensity)
+    gl.uniform1f(this._programs.splat.uniforms.uAdditiveMode, this._config.additiveMode ? 1.0 : 0.0)
+    gl.uniform1f(this._programs.splat.uniforms.uAdditiveThreshold, this._config.additiveThreshold || 1.0)
     this._blit(this._density.write[1])
     this._density.swap()
   }
@@ -583,6 +618,8 @@ export default class FluidAnimation {
     this._programs.display.bind()
     gl.uniform1i(this._programs.display.uniforms.uTexture, this._density.read[2])
     gl.uniform4f(this._programs.display.uniforms.uBackgroundColor, 0.0, 0.0, 0.0, 0.0)
+    gl.uniform1f(this._programs.display.uniforms.uAdditiveMode, this._config.additiveMode ? 1.0 : 0.0)
+    gl.uniform1f(this._programs.display.uniforms.uAdditiveThreshold, this._config.additiveThreshold || 1.0)
     this._blit(null)
   }
 }

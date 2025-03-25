@@ -1,27 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react'
-import FluidAnimation from 'react-fluid-animation'
+import ReactFluidAnimation, { type FluidConfig } from 'react-fluid-animation'
 import GitHubCorner from 'react-github-corner'
 import { Pane } from 'tweakpane'
 
-interface FluidConfig {
-  textureDownsample: number
-  densityDissipation: number
-  velocityDissipation: number
-  pressureDissipation: number
-  pressureIterations: number
-  curl: number
-  splatRadius: number
-  colors: number[][]
-}
 
 const defaultConfig: FluidConfig = {
-  textureDownsample: 1,
-  densityDissipation: 0.98,
+  additiveMode: true,
+  additiveThreshold: 1.5,
+  textureDownsample: 0,
+  densityDissipation: 0.92,
   velocityDissipation: 0.99,
   pressureDissipation: 0.8,
   pressureIterations: 25,
   curl: 30,
-  splatRadius: 0.005,
+  splatRadius: 0.002,
   colors: [
     [10, 0, 30],   // Purple
     [0, 26, 10],   // Green
@@ -31,7 +23,7 @@ const defaultConfig: FluidConfig = {
   ]
 }
 
-const colorPresets: Record<string, number[][]> = {
+const colorPresets: Record<string, [number, number, number][]> = {
   default: [
     [10, 0, 30],   // Purple
     [0, 26, 10],   // Green
@@ -120,6 +112,17 @@ const App: React.FC = () => {
       max: 0.02
     })
 
+    pane.addBinding(config, 'additiveMode', {
+      label: 'Additive Mode'
+    });
+
+    pane.addBinding(config, 'additiveThreshold', {
+      label: 'Additive Threshold',
+      min: 0.5,
+      max: 10.0,
+      step: 0.1
+    });
+
     const colorSchemeBinding = pane.addBinding({ colorScheme }, 'colorScheme', {
       label: 'Color Scheme',
       options: Object.keys(colorPresets).reduce((acc, key) => ({ ...acc, [key]: key }), {})
@@ -139,11 +142,24 @@ const App: React.FC = () => {
     pane.on('change', (ev) => {
       if (ev.target === colorSchemeBinding) {
         setColorScheme(ev.value as string)
-        setConfig({ ...config, colors: colorPresets[ev.value as keyof typeof colorPresets] })
+        setConfig(prev => ({ 
+          ...prev, 
+          colors: colorPresets[ev.value as keyof typeof colorPresets] 
+        }));
       } else {
         const target = ev.target as { key?: string };
         if (target.key) {
-          setConfig(prev => ({ ...prev, [target.key as string]: ev.value }))
+          // Immediately apply the new configuration
+          const newConfig = { 
+            ...config, 
+            [target.key as string]: ev.value 
+          };
+          setConfig(newConfig);
+          
+          // Also directly update the animation if it exists
+          if (animationRef.current) {
+            animationRef.current.config = newConfig;
+          }
         }
       }
     })
@@ -156,7 +172,7 @@ const App: React.FC = () => {
   }, [])
 
   const handleRandomSplats = () => {
-    animationRef.current?.addSplats(5 + Math.random() * 20 | 0)
+    animationRef.current?.addRandomSplats(5 + Math.random() * 20 | 0)
   }
 
   const handleReset = () => {
@@ -164,11 +180,15 @@ const App: React.FC = () => {
     setColorScheme('default')
   }
 
+  const handleAnimationRef = (animation: any) => {
+    animationRef.current = animation
+  }
+
   return (
     <div style={{ height: '100vh' }}>
-      <FluidAnimation
+      <ReactFluidAnimation
         config={config}
-        animationRef={animationRef}
+        animationRef={handleAnimationRef}
       />
 
       <div
@@ -200,7 +220,7 @@ const App: React.FC = () => {
       </div>
 
       <GitHubCorner
-        href='https://github.com/transitive-bullshit/react-fluid-animation'
+        href='https://github.com/thomasdqr/react-fluid-animation'
         bannerColor='#70B7FD'
         direction='left'
       />

@@ -1,4 +1,4 @@
-import React, { Component, ForwardRefExoticComponent, RefAttributes } from 'react';
+import React from 'react';
 
 export interface FluidConfig {
   textureDownsample: number;
@@ -8,34 +8,47 @@ export interface FluidConfig {
   pressureIterations: number;
   curl: number;
   splatRadius: number;
+  additiveMode?: boolean;
+  additiveThreshold?: number;
   colors?: Array<[number, number, number]>;
 }
 
-export interface SizeMeProps {
-  size?: {
-    width: number;
-    height: number;
-  };
-}
-
-export interface ReactFluidAnimationProps extends SizeMeProps {
+export interface ReactFluidAnimationProps {
   content?: string;
   config?: Partial<FluidConfig>;
   style?: React.CSSProperties;
   animationRef?: (animation: any) => void;
   disableRandomSplats?: boolean;
   movementThreshold?: number;
+  size?: {
+    width: number;
+    height: number;
+  };
 }
 
-class ReactFluidAnimationBase extends Component<ReactFluidAnimationProps> {
-  _container: HTMLDivElement | null;
-  _canvas: HTMLCanvasElement | null;
-  _animation: any;
-  _tickRaf: number | null;
+// Export the FluidAnimation class
+export class FluidAnimation {
+  constructor(options: {
+    canvas: HTMLCanvasElement;
+    content?: string;
+    config?: Partial<FluidConfig>;
+    disableRandomSplats?: boolean;
+    movementThreshold?: number;
+  });
+  
+  resize(): void;
+  update(): void;
+  addRandomSplats(count: number): void;
+  onMouseDown(e: MouseEvent): void;
+  onMouseMove(e: MouseEvent): void;
+  onMouseUp(e: MouseEvent): void;
+  onTouchStart(e: TouchEvent): void;
+  onTouchMove(e: TouchEvent): void;
+  onTouchEnd(e: TouchEvent): void;
 }
 
-declare const ReactFluidAnimation: ForwardRefExoticComponent<ReactFluidAnimationProps & RefAttributes<ReactFluidAnimationBase>>;
+// Export the default component
+declare const ReactFluidAnimation: React.ForwardRefExoticComponent<ReactFluidAnimationProps & React.RefAttributes<any>>;
 
 export default ReactFluidAnimation;
-export { FluidConfig };
 export const defaultConfig: FluidConfig; 

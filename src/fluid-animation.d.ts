@@ -6,6 +6,8 @@ export interface FluidConfig {
   pressureIterations: number;
   curl: number;
   splatRadius: number;
+  additiveMode?: boolean;
+  additiveThreshold?: number;
   colors?: Array<[number, number, number]>;
 }
 

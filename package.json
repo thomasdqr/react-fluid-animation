@@ -6,19 +6,18 @@
   "license": "MIT",
   "repository": "transitive-bullshit/react-fluid-animation",
   "type": "module",
-  "main": "dist/cjs/index.js",
-  "module": "dist/esm/index.js",
+  "main": "./dist/index.umd.js",
+  "module": "./dist/index.es.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.es.js",
+      "require": "./dist/index.umd.js"
     }
   },
-  "types": "dist/index.d.ts",
   "engines": {
-    "node": ">=12",
-    "npm": ">=6"
+    "node": ">=16"
   },
   "keywords": [
     "react",
@@ -29,52 +28,38 @@
     "flow"
   ],
   "scripts": {
-    "prebuild": "npm run clean",
-    "build": "npm run build:esm && npm run build:cjs && npm run build:types",
-    "build:esm": "cross-env BABEL_ENV=esm babel src -s -d dist/esm",
-    "build:cjs": "cross-env BABEL_ENV=cjs babel src -s -d dist/cjs",
-    "build:types": "tsc --emitDeclarationOnly",
-    "prestart": "npm run clean",
-    "start": "npm run build -- --watch",
-    "dev": "npm start",
-    "clean": "del dist",
-    "test": "cross-env CI=1 react-scripts test --env=jsdom",
-    "test:watch": "react-scripts test --env=jsdom",
-    "prepare": "npm run build",
-    "predeploy": "cd example && npm install && npm run build",
-    "deploy": "gh-pages -d example/build"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit",
+    "prepare": "npm run build"
   },
   "dependencies": {
     "@juggle/resize-observer": "^3.4.0",
-    "raf": "^3.4.1"
+    "prop-types": "^15.8.1",
+    "raf": "^3.4.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
-  "peerDependencies": {
-    "prop-types": "^15.5.4",
-    "react": "^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0",
-    "react-dom": "^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0"
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": false
+    },
+    "react-dom": {
+      "optional": false
+    }
   },
   "devDependencies": {
-    "@babel/cli": "^7.1.2",
-    "@babel/core": "^7.1.2",
-    "@babel/plugin-proposal-class-properties": "^7.1.0",
-    "@babel/preset-env": "^7.1.0",
-    "@babel/preset-react": "^7.0.0",
+    "@types/node": "^22.13.13",
+    "@types/raf": "^3.4.3",
     "@types/react": "^18.2.0",
-    "cross-env": "^5.1.4",
-    "del-cli": "^1.1.0",
-    "eslint": "^5.0.1",
-    "eslint-config-standard": "^11.0.0",
-    "eslint-config-standard-react": "^6.0.0",
-    "eslint-plugin-import": "^2.13.0",
-    "eslint-plugin-node": "^7.0.1",
-    "eslint-plugin-promise": "^4.0.0",
-    "eslint-plugin-react": "^7.10.0",
-    "eslint-plugin-standard": "^3.1.0",
-    "gh-pages": "^1.2.0",
-    "react": "^16.6.3",
-    "react-dom": "^16.6.3",
-    "react-scripts": "^1.1.4",
-    "typescript": "^5.0.4"
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.0.4",
+    "vite": "^5.0.0",
+    "vite-plugin-dts": "^3.0.0"
   },
   "files": [
     "dist"

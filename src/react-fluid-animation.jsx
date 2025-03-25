@@ -53,10 +53,32 @@ class ReactFluidAnimation extends Component {
 
     if (props.config) {
       this._animation.config = {
-        ...props.config,
-        defaultConfig
+        ...defaultConfig,
+        ...props.config
+      }
+      
+      // Force immediate update on config changes
+      if (this._animation) {
+        // Update dynamic shader parameters immediately to see changes in real-time
+        const gl = this._animation._gl;
+        const programs = this._animation._programs;
+        
+        // Update display shader settings
+        if (programs.display) {
+          programs.display.bind();
+          gl.uniform1f(programs.display.uniforms.uAdditiveMode, props.config.additiveMode ? 1.0 : 0.0);
+          gl.uniform1f(programs.display.uniforms.uAdditiveThreshold, props.config.additiveThreshold || 1.0);
+        }
+        
+        // Update splat shader settings
+        if (programs.splat) {
+          programs.splat.bind();
+          gl.uniform1f(programs.splat.uniforms.uAdditiveMode, props.config.additiveMode ? 1.0 : 0.0);
+          gl.uniform1f(programs.splat.uniforms.uAdditiveThreshold, props.config.additiveThreshold || 1.0);
+        }
       }
     }
+    
     if (this._animation) {
       this._animation.disableRandomSplats = props.disableRandomSplats
       if (typeof props.movementThreshold === 'number') {
