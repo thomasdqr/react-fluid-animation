@@ -121,6 +121,7 @@ cd react-fluid-animation
 npm install
 
 # Run the example
+cd example
 npm run dev
 ```
 
