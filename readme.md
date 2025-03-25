@@ -4,6 +4,10 @@ A fork of [transitive-bullshit/react-fluid-animation](https://github.com/transit
 
 This package provides a beautiful WebGL fluid animation that responds to mouse/touch input for React applications. It's a direct port and extension of Pavel Dobryakov's excellent work on WebGL fluid simulation.
 
+## Live Demo
+
+**[Try the live demo here!](https://thomasdqr.github.io/react-fluid-animation/)**
+
 ## Installation
 
 ```bash
