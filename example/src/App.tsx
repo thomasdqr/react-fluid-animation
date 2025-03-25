@@ -1,19 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react'
-import ReactFluidAnimation, { type FluidConfig } from 'react-fluid-animation'
+import ReactFluidAnimation, { 
+  FluidAnimation,
+  FluidConfig 
+} from 'react-fluid-animation'
 import GitHubCorner from 'react-github-corner'
 import { Pane } from 'tweakpane'
 
 
 const defaultConfig: FluidConfig = {
   additiveMode: true,
-  additiveThreshold: 1.5,
+  additiveThreshold: 7,
+  colorCycleSpeed: 0.1,
   textureDownsample: 0,
   densityDissipation: 0.92,
   velocityDissipation: 0.99,
   pressureDissipation: 0.8,
   pressureIterations: 25,
   curl: 30,
-  splatRadius: 0.002,
+  splatRadius: 0.005,
   colors: [
     [10, 0, 30],   // Purple
     [0, 26, 10],   // Green
@@ -58,7 +62,7 @@ const colorPresets: Record<string, [number, number, number][]> = {
 const App: React.FC = () => {
   const [config, setConfig] = useState<FluidConfig>(defaultConfig)
   const [colorScheme, setColorScheme] = useState('default')
-  const animationRef = useRef<any>(null)
+  const animationRef = useRef<FluidAnimation | null>(null)
   const paneRef = useRef<Pane | null>(null)
 
   useEffect(() => {
@@ -111,6 +115,13 @@ const App: React.FC = () => {
       min: 0.0001,
       max: 0.02
     })
+
+    pane.addBinding(config, 'colorCycleSpeed', {
+      label: 'Color Cycle Speed',
+      min: 0.01,
+      max: 5.0,
+      step: 0.01
+    });
 
     pane.addBinding(config, 'additiveMode', {
       label: 'Additive Mode'
@@ -180,7 +191,7 @@ const App: React.FC = () => {
     setColorScheme('default')
   }
 
-  const handleAnimationRef = (animation: any) => {
+  const handleAnimationRef = (animation: FluidAnimation) => {
     animationRef.current = animation
   }
 
@@ -189,6 +200,8 @@ const App: React.FC = () => {
       <ReactFluidAnimation
         config={config}
         animationRef={handleAnimationRef}
+        disableRandomSplats={true}
+        movementThreshold={10}
       />
 
       <div

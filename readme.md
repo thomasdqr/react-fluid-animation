@@ -1,129 +1,203 @@
-# react-fluid-animation ([demo](https://transitive-bullshit.github.io/react-fluid-animation/))
+# React Fluid Animation
 
-> Fluid media simulation for React powered by WebGL.
+A fork of [transitive-bullshit/react-fluid-animation](https://github.com/transitive-bullshit/react-fluid-animation) with enhanced features and TypeScript support.
 
-[![NPM](https://img.shields.io/npm/v/react-fluid-animation.svg)](https://www.npmjs.com/package/react-fluid-animation) [![Build Status](https://travis-ci.com/transitive-bullshit/react-fluid-animation.svg?branch=master)](https://travis-ci.com/transitive-bullshit/react-fluid-animation) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+This package provides a beautiful WebGL fluid animation that responds to mouse/touch input for React applications. It's a direct port and extension of Pavel Dobryakov's excellent work on WebGL fluid simulation.
 
-[![Demo](https://raw.githubusercontent.com/transitive-bullshit/react-fluid-animation/master/example/demo.gif)](https://transitive-bullshit.github.io/react-fluid-animation/)
-
-This is a port of the WebGL fluid animation by [Pavel Dobryakov](https://github.com/PavelDoGreat/WebGL-Fluid-Simulation), which itself is a port of [GPU Gems Chapter 38](http://developer.download.nvidia.com/books/HTML/gpugems/gpugems_ch38.html). It provides a very fast, stable fluid simulation by iteratively solving the Navier-Stokes equations for incompressible flow.
-
-## Install
+## Installation
 
 ```bash
-npm install --save react-fluid-animation
+# Using npm
+npm install react-fluid-animation
+
+# Using yarn
+yarn add react-fluid-animation
+
+# Using pnpm
+pnpm add react-fluid-animation
 ```
 
-## Usage
+## Basic Usage
 
-Check out the [demo](https://transitive-bullshit.github.io/react-fluid-animation/).
-
-### ES Modules (Recommended)
+Here's a simple example to get you started:
 
 ```jsx
-import React from 'react'
-import FluidAnimation from 'react-fluid-animation'
+import React from 'react';
+import ReactFluidAnimation from 'react-fluid-animation';
 
-export default function App() {
+const App = () => {
   return (
-    <FluidAnimation
-      style={{ height: '100vh' }}
-    />
-  )
-}
+    <div style={{ height: '100vh' }}>
+      <ReactFluidAnimation />
+    </div>
+  );
+};
+
+export default App;
 ```
 
-### CommonJS
+## Advanced Usage
+
+You can customize the animation with various properties:
 
 ```jsx
-const React = require('react')
-const FluidAnimation = require('react-fluid-animation').default
+import React, { useRef } from 'react';
+import ReactFluidAnimation, { 
+  FluidAnimation, 
+  FluidConfig,
+  defaultConfig 
+} from 'react-fluid-animation';
 
-function App() {
+const App = () => {
+  // Create a custom configuration
+  const config = {
+    textureDownsample: 1,
+    densityDissipation: 0.95,
+    velocityDissipation: 0.98,
+    pressureDissipation: 0.8,
+    pressureIterations: 25,
+    curl: 30,
+    splatRadius: 0.005,
+    additiveMode: true,
+    additiveThreshold: 1.0,
+    colorCycleSpeed: 0.1,
+    colors: [
+      [10, 0, 30],   // Purple
+      [0, 26, 10],   // Green
+      [20, 10, 0],   // Orange
+      [0, 10, 30],   // Blue
+      [30, 0, 10]    // Red
+    ]
+  };
+
+  // Reference to access the animation instance
+  const handleAnimationRef = (animation) => {
+    // You can manually add splats or control the animation
+    // Example: animation.addRandomSplats(5);
+  };
+
   return (
-    <FluidAnimation
-      style={{ height: '100vh' }}
-    />
-  )
-}
+    <div style={{ height: '100vh' }}>
+      <ReactFluidAnimation
+        config={config}
+        animationRef={handleAnimationRef}
+        disableRandomSplats={true}
+        movementThreshold={10}
+      />
 
-module.exports = App
+      {/* Optional overlay content */}
+      <div style={{
+        position: 'absolute',
+        zIndex: 1,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        color: '#fff',
+        pointerEvents: 'none'
+      }}>
+        <h1>My Fluid Animation</h1>
+      </div>
+    </div>
+  );
+};
+
+export default App;
 ```
 
-## TypeScript Support
+## Running the Examples
 
-This package includes TypeScript type definitions.
+The package includes an example project demonstrating different configurations and features:
 
-```tsx
-import React from 'react'
-import FluidAnimation, { FluidConfig } from 'react-fluid-animation'
+```bash
+# Clone the repository
+git clone https://github.com/thomasdqr/react-fluid-animation.git
+cd react-fluid-animation
 
-// Optional configuration
-const config: Partial<FluidConfig> = {
-  textureDownsample: 1,
-  densityDissipation: 0.98,
-  velocityDissipation: 0.99
-}
+# Install dependencies
+npm install
 
-export default function App() {
-  return (
-    <FluidAnimation
-      config={config}
-      style={{ height: '100vh' }}
-    />
-  )
-}
+# Run the example
+npm run dev
 ```
 
 ## Props
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| content | string | | Optional background content for the animation |
-| config | object | defaultConfig | Configuration for the fluid animation |
-| style | object | {} | Optional style object for the container |
-| animationRef | function | | Optional callback with a reference to the animation instance |
-| disableRandomSplats | boolean | false | Disable random splats that spawn occasionally |
+`ReactFluidAnimation` accepts the following props:
 
-## Configuration
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `content` | `string` | `undefined` | Optional HTML content to overlay |
+| `config` | `Partial<FluidConfig>` | `defaultConfig` | Configuration options for the fluid animation |
+| `style` | `React.CSSProperties` | `{}` | Custom styles for the container |
+| `animationRef` | `(animation: FluidAnimation) => void` | `undefined` | Callback to access the FluidAnimation instance |
+| `disableRandomSplats` | `boolean` | `true` | Disable random splats |
+| `movementThreshold` | `number` | `0` | Threshold for movement detection |
 
+## Configuration Options
+
+The `config` prop accepts a `FluidConfig` object with the following properties:
+
+| Property | Type | Default | Range | Description |
+|----------|------|---------|-------|-------------|
+| `textureDownsample` | `number` | `1` | `0-2` | Level of texture downsampling |
+| `densityDissipation` | `number` | `0.95` | `0.9-1.0` | How quickly density properties dissipate |
+| `velocityDissipation` | `number` | `0.98` | `0.9-1.0` | How quickly velocity properties dissipate |
+| `pressureDissipation` | `number` | `0.8` | `0.0-1.0` | How quickly pressure properties dissipate |
+| `pressureIterations` | `number` | `25` | `1-60` | Number of pressure iterations |
+| `curl` | `number` | `30` | `0-50` | Curl intensity |
+| `splatRadius` | `number` | `0.005` | `0.0001-0.02` | Radius of splats |
+| `additiveMode` | `boolean` | `false` | - | Enable additive color mode |
+| `additiveThreshold` | `number` | `1.0` | `0.5-10.0` | Threshold for additive mode to turn fully white |
+| `colorCycleSpeed` | `number` | `0.1` | `0.01-5.0` | Speed of color cycling |
+| `colors` | `Array<[number, number, number]>` | See below | - | Array of RGB colors for the fluid |
+
+Default colors:
 ```js
-// Default configuration
-const defaultConfig = {
-  textureDownsample: 1,
-  densityDissipation: 0.95,
-  velocityDissipation: 0.98,
-  pressureDissipation: 0.8,
-  pressureIterations: 25,
-  curl: 30,
-  splatRadius: 0.005,
-  colors: [
-    [10, 0, 30],   // Purple
-    [0, 26, 10],   // Green
-    [20, 10, 0],   // Orange
-    [0, 10, 30],   // Blue
-    [30, 0, 10]    // Red
-  ]
-}
+[
+  [5, 0, 15],   // Purple (reduced)
+  [0, 13, 5],   // Green (reduced)
+  [10, 5, 0],   // Orange (reduced)
+  [0, 5, 15],   // Blue (reduced)
+  [15, 0, 5]    // Red (reduced)
+]
 ```
 
-You can provide your own array of colors to customize the fluid animation. Each color is represented as an RGB array with values ranging from 0 to 30 for optimal fluid display. If you don't provide the `colors` array, the animation will use the default HSB-based color generation.
+## API
 
-```jsx
-// Example with custom colors
-const config = {
-  // ... other config options
-  colors: [
-    [30, 0, 0],    // Red
-    [0, 30, 0],    // Green
-    [0, 0, 30],    // Blue
-    [30, 30, 0],   // Yellow
-    [0, 30, 30]    // Cyan
-  ]
-}
-```
+When using the `animationRef` prop, you get access to a `FluidAnimation` instance with these methods:
+
+| Method | Parameters | Description |
+|--------|------------|-------------|
+| `addSplat` | `SplatOptions` | Add a single splat to the animation |
+| `addSplats` | `SplatOptions[]` | Add multiple splats to the animation |
+| `addRandomSplats` | `count: number` | Add a specified number of random splats |
+| `resize` | none | Resize the animation to match canvas dimensions |
+| `update` | none | Update the animation (called automatically) |
+
+The `SplatOptions` interface includes:
+- `x`: x-coordinate (optional)
+- `y`: y-coordinate (optional)
+- `dx`: x-velocity (optional)
+- `dy`: y-velocity (optional)
+- `color`: RGB color array (optional)
+
+## Events
+
+The component automatically handles the following events:
+- Mouse events: `onMouseDown`, `onMouseMove`, `onMouseUp`
+- Touch events: `onTouchStart`, `onTouchMove`, `onTouchEnd`
+
+These events trigger splats in the fluid animation based on user interaction.
 
 ## Credits
+
+This project is a fork of the original [react-fluid-animation](https://github.com/transitive-bullshit/react-fluid-animation) by Travis Fischer.
+
+Special thanks to:
 
 - [Pavel Dobryakov](https://github.com/PavelDoGreat/WebGL-Fluid-Simulation) - Original WebGL fluid experiment by Pavel Dobryakov. This project is a direct port and extension of Pavel's excellent work.
 - [GPU Gems Chapter 38](http://developer.download.nvidia.com/books/HTML/gpugems/gpugems_ch38.html) - Fast fluid dynamics simulation on the GPU.
@@ -132,6 +206,4 @@ const config = {
 
 ## License
 
-MIT © [Travis Fischer](https://github.com/transitive-bullshit)
-
-Support my OSS work by <a href="https://twitter.com/transitive_bs">following me on twitter <img src="https://storage.googleapis.com/saasify-assets/twitter-logo.svg" alt="twitter" height="24px" align="center"></a>
+MIT

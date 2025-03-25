@@ -13,6 +13,7 @@ export const defaultConfig = {
   splatRadius: 0.005,
   additiveMode: false,
   additiveThreshold: 1.0, // Higher values require more fluid to turn white (range: 0.5-3.0 recommended)
+  colorCycleSpeed: 0.1, // Controls how quickly colors cycle (0.01-1.0, where higher is faster)
   colors: [
     [5, 0, 15],   // Purple (reduced)
     [0, 13, 5],   // Green (reduced)
@@ -45,7 +46,7 @@ export default class FluidAnimation {
         ...defaultConfig,
         ...opts.config
       },
-      disableRandomSplats = false,
+      disableRandomSplats = true,
       movementThreshold = 0
     } = opts
 
@@ -183,18 +184,21 @@ export default class FluidAnimation {
   _updatePointerColor(pointer) {
     // Use custom colors if provided, otherwise generate dynamically
     if (this._config.colors && this._config.colors.length > 0) {
-      // Cycle through the colors array
+      // Cycle through the colors array using colorCycleSpeed to control the rate
       const now = Date.now() * 0.001;
-      const colorIndex = Math.floor((now * 0.1) % this._config.colors.length);
+      const cycleSpeed = this._config.colorCycleSpeed || 0.1;
+      const colorIndex = Math.floor((now * cycleSpeed) % this._config.colors.length);
       pointer.color = this._config.colors[colorIndex].slice(); // Make a copy of the color
       
       // Add slight variations to colors for more interesting effects
-      const variation = Math.sin(now * 0.3) * 2;
+      // Also scale variation by cycle speed for more consistent feel
+      const variation = Math.sin(now * 0.3 * cycleSpeed) * 2;
       pointer.color = pointer.color.map(c => Math.max(0, c + variation));
     } else {
       // Original color generation logic based on HSB
       const now = Date.now() * 0.001;
-      const hue = (now * 0.15) % 1;
+      const cycleSpeed = this._config.colorCycleSpeed || 0.1;
+      const hue = (now * 0.15 * cycleSpeed) % 1;
       const saturation = 0.6;
       const brightness = 0.6;
       
@@ -513,12 +517,15 @@ export default class FluidAnimation {
     const dt = Math.min((Date.now() - this._time) / 1000, 0.016)
     this._time = Date.now()
     this._timer += 0.0001
-    this._colorCycle = (this._colorCycle + dt * 0.5) % 1.0
     
-    // Occasionally add random splats for ambient motion
-    if (!this._disableRandomSplats && Math.random() < 0.01) {
-      this.addRandomSplats(1);
-    }
+    // Use colorCycleSpeed to control the rate of color cycling
+    const cycleSpeed = this._config.colorCycleSpeed || 0.1
+    this._colorCycle = (this._colorCycle + dt * cycleSpeed * 5.0) % 1.0
+    
+    // Random splats are now only added via explicit addRandomSplats() calls
+    // Removed: if (!this._disableRandomSplats && Math.random() < 0.01) {
+    //   this.addRandomSplats(1);
+    // }
 
     const w = this._textureWidth
     const h = this._textureHeight
