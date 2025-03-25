@@ -8,6 +8,9 @@ This package provides a beautiful WebGL fluid animation that responds to mouse/t
 
 **[Try the live demo here!](https://thomasdqr.github.io/react-fluid-animation/)**
 
+![image](https://github.com/user-attachments/assets/7a1184ee-5c72-4bb4-8e1c-4c5d02b5522e)
+
+
 ## Installation
 
 ```bash
